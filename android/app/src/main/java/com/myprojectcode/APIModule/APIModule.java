@@ -2,8 +2,6 @@ package com.myprojectcode.APIModule;
 
 import androidx.annotation.NonNull;
 
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -13,14 +11,18 @@ import okhttp3.Response;
 import okhttp3.Callback;
 import okhttp3.Call;
 import java.io.IOException;
-import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class APIModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
     private OkHttpClient client = new OkHttpClient();
+    private final LinkedBlockingQueue<String> dataBuffer = new LinkedBlockingQueue<>();
+
 
     public APIModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -46,10 +48,8 @@ public class APIModule extends ReactContextBaseJavaModule {
                     @Override
                     public void onResponse(Call call, Response response) throws IOException {
                         if (response.isSuccessful()) {
-                            WritableMap params = Arguments.createMap();
-                            params.putString("data", response.body().string());
-
-                            sendEvent("FetchData", params);
+                            String responseData = response.body().string();
+                            dataBuffer.add(responseData);
                         } else {
                         }
                     }
@@ -66,7 +66,7 @@ public class APIModule extends ReactContextBaseJavaModule {
         return "APIModule";
     }
 
-    public void sendEvent(String eventName, @NonNull WritableMap params) {
+    public void sendEvent(String eventName, String params) {
         this.reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
@@ -74,10 +74,33 @@ public class APIModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void getData(String url) {
-
-
         callAPI(url);
     }
 
+    private void sendData() {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        String data = dataBuffer.take();
+                        sendEvent("FetchData", "data");
+                    } catch (InterruptedException e) {
+                        // handle exception
+                    }
+                }
+            }
+        });
+    }
 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    @ReactMethod
+    public void scheduleSendData() {
+        scheduler.scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                sendData();
+            }
+        }, 0, 1, TimeUnit.SECONDS);
+    }
 }
