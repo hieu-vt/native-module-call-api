@@ -5,6 +5,7 @@
  * @format
  */
 
+import axios from 'axios';
 import type {PropsWithChildren} from 'react';
 import React, {useEffect} from 'react';
 import {
@@ -68,9 +69,16 @@ function App(): JSX.Element {
   };
 
   useEffect(() => {
-    console.log('Here');
+    let timeout: number | null = null;
     const listener = eventEmitter.addListener('FetchData', data => {
-      console.log('data2', JSON.parse(data.data));
+      if (timeout != null) {
+        return;
+      }
+
+      timeout = setTimeout(() => {
+        console.log('data2', JSON.parse(data), 'From click me');
+        timeout = null;
+      }, 1000);
     });
 
     return () => {
@@ -80,7 +88,7 @@ function App(): JSX.Element {
 
   useEffect(() => {
     console.log('here1');
-    APIModule.scheduleSendData();
+    // APIModule.scheduleSendData();
   }, []);
 
   return (
@@ -106,6 +114,16 @@ function App(): JSX.Element {
             // );
           }}>
           Click me
+        </Text>
+        <Text
+          onPress={() => {
+            axios
+              .get('https://jsonplaceholder.typicode.com/todos')
+              .then(data => {
+                console.log('data', data.data, 'From press me');
+              });
+          }}>
+          Press me
         </Text>
         <View
           style={{

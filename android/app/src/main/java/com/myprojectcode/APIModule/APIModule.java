@@ -2,6 +2,7 @@ package com.myprojectcode.APIModule;
 
 import androidx.annotation.NonNull;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -17,6 +18,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.facebook.react.bridge.WritableMap;
+
+
 
 public class APIModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
@@ -49,7 +53,7 @@ public class APIModule extends ReactContextBaseJavaModule {
                     public void onResponse(Call call, Response response) throws IOException {
                         if (response.isSuccessful()) {
                             String responseData = response.body().string();
-                            dataBuffer.add(responseData);
+                            sendEvent("FetchData", responseData);
                         } else {
                         }
                     }
@@ -66,7 +70,7 @@ public class APIModule extends ReactContextBaseJavaModule {
         return "APIModule";
     }
 
-    public void sendEvent(String eventName, String params) {
+    public void sendEvent(String eventName, @NonNull String params) {
         this.reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
@@ -77,30 +81,41 @@ public class APIModule extends ReactContextBaseJavaModule {
         callAPI(url);
     }
 
-    private void sendData() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        String data = dataBuffer.take();
-                        sendEvent("FetchData", "data");
-                    } catch (InterruptedException e) {
-                        // handle exception
-                    }
-                }
-            }
-        });
-    }
+//    private void sendData() {
+//        executor.execute(new Runnable() {
+//            @Override
+//            public void run() {
+//                while (true) {
+//                    try {
+//                        String data = dataBuffer.take();
+//                        WritableMap params = Arguments.createMap();
+//                        params.putString("data", data);
+//                        sendEvent("FetchData", params);
+//                    } catch (InterruptedException e) {
+//                        // handle exception
+//                    }
+//                }
+//            }
+//        });
+//    }
+//
+//    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-    @ReactMethod
-    public void scheduleSendData() {
-        scheduler.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                sendData();
-            }
-        }, 0, 1, TimeUnit.SECONDS);
-    }
+//    @ReactMethod
+//    public void scheduleSendData() {
+//        scheduler.scheduleAtFixedRate(new Runnable() {
+//            public void run() {
+//                while (true) {
+//                    try {
+//                        String data = dataBuffer.take();
+//                        WritableMap params = Arguments.createMap();
+//                        params.putString("data", data);
+//                        sendEvent("FetchData", params);
+//                    } catch (InterruptedException e) {
+//                        // handle exception
+//                    }
+//                }
+//            }
+//        }, 0, 1, TimeUnit.SECONDS);
+//    }
 }
