@@ -67,16 +67,16 @@ function App(): JSX.Element {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
-  useEffect(() => {
-    console.log('Here');
-    const listener = eventEmitter.addListener('FetchData', data => {
-      console.log('data2', JSON.parse(data.data));
-    });
+  // useEffect(() => {
+  //   console.log('Here');
+  //   const listener = eventEmitter.addListener('FetchData', data => {
+  //     console.log('data2', JSON.parse(data.data));
+  //   });
 
-    return () => {
-      eventEmitter.removeSubscription(listener);
-    };
-  }, []);
+  //   return () => {
+  //     eventEmitter.removeSubscription(listener);
+  //   };
+  // }, []);
 
   return (
     <SafeAreaView style={backgroundStyle}>

@@ -15,7 +15,8 @@ import okhttp3.Call;
 import java.io.IOException;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class APIModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
@@ -24,6 +25,37 @@ public class APIModule extends ReactContextBaseJavaModule {
     public APIModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+    }
+
+    private final Executor executor = Executors.newSingleThreadExecutor();
+
+    private void callAPI(String url) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Request request = new Request.Builder()
+                        .url(url)
+                        .build();
+                // your API call code here
+                client.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            WritableMap params = Arguments.createMap();
+                            params.putString("data", response.body().string());
+
+                            sendEvent("FetchData", params);
+                        } else {
+                        }
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -41,31 +73,10 @@ public class APIModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void getData(String url, Promise promise) {
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
+    public void getData(String url) {
 
 
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                promise.reject(e);
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    WritableMap params = Arguments.createMap();
-                    params.putString("data", response.body().string());
-
-                    sendEvent("FetchData", params);
-                } else {
-                    promise.reject(response.message());
-                }
-            }
-        });
+        callAPI(url);
     }
 
 
