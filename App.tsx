@@ -30,7 +30,7 @@ type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-const MySwiftModule = NativeModules.MySwiftModule;
+const APIModule = NativeModules.APIModule;
 
 function Section({children, title}: SectionProps): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -58,7 +58,7 @@ function Section({children, title}: SectionProps): JSX.Element {
   );
 }
 
-const eventEmitter = new NativeEventEmitter(MySwiftModule);
+const eventEmitter = new NativeEventEmitter(APIModule);
 
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -70,7 +70,7 @@ function App(): JSX.Element {
   useEffect(() => {
     console.log('Here');
     const listener = eventEmitter.addListener('FetchData', data => {
-      console.log('data2', data);
+      console.log('data2', JSON.parse(data.data));
     });
 
     return () => {
@@ -91,10 +91,14 @@ function App(): JSX.Element {
         <Text
           onPress={() => {
             setInterval(() => {
-              MySwiftModule.fetchData(
-                'https://jsonplaceholder.typicode.com/todos',
-              );
+              APIModule.getData('https://jsonplaceholder.typicode.com/todos');
             }, 100);
+            // APIModule.getData(
+            //   'https://jsonplaceholder.typicode.com/todos',
+            //   data => {
+            //     console.log('data', data);
+            //   },
+            // );
           }}>
           Click me
         </Text>
