@@ -70,13 +70,13 @@ function App(): JSX.Element {
 
   useEffect(() => {
     let timeout: number | null = null;
-    const listener = eventEmitter.addListener('FetchData', data => {
+    const listener = eventEmitter.addListener('SocketData', data => {
       if (timeout != null) {
         return;
       }
 
       timeout = setTimeout(() => {
-        console.log('data2', JSON.parse(data), 'From click me');
+        console.log(data);
         timeout = null;
       }, 1000);
     });
@@ -88,7 +88,7 @@ function App(): JSX.Element {
 
   useEffect(() => {
     console.log('here1');
-    // APIModule.scheduleSendData();
+    APIModule.runSocket();
   }, []);
 
   return (
