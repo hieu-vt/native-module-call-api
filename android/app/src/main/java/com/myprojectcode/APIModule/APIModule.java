@@ -1,5 +1,6 @@
 package com.myprojectcode.APIModule;
 
+import android.net.TrafficStats;
 import android.system.Os;
 
 import androidx.annotation.NonNull;
@@ -9,7 +10,6 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 
 import io.socket.emitter.Emitter;
-import io.socket.engineio.client.Socket;
 import io.socket.engineio.client.transports.WebSocket;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -20,17 +20,23 @@ import okhttp3.Call;
 import java.io.IOException;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.net.URISyntaxException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import io.socket.client.IO;
+import io.socket.client.Socket;
 
 public class APIModule extends ReactContextBaseJavaModule {
     private final ReactApplicationContext reactContext;
-    private io.socket.engineio.client.Socket socket;
+//    private io.socket.engineio.client.Socket socket;
     private OkHttpClient client = new OkHttpClient();
     private final LinkedBlockingQueue<String> dataBuffer = new LinkedBlockingQueue<>();
-    private Socket.Options opts;
+    private Socket socket;
+    private IO.Options opts;
 
     public APIModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -89,28 +95,36 @@ public class APIModule extends ReactContextBaseJavaModule {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                // handle connect socket here
                 try {
-                    opts = new Socket.Options();
-                    opts.transports = new String[] {WebSocket.NAME};
-                    opts.policyPort = 3001;
-                    opts.rememberUpgrade = true;
-                    opts.timestampRequests = true;
-                    socket = new Socket("http://192.168.0.102:3001", opts);
+                    opts = new IO.Options();
+                    opts.reconnection = true;
+                    opts.reconnectionDelay = 1000;
+                    opts.reconnectionAttempts = 5;
+                    opts.transports =  new String[] {WebSocket.NAME};
+                    sendEvent("SocketData", "Connecting");
 
-                    socket.listeners("NEW_LIST");
+                    socket = IO.socket("http://10.0.70.1:3001", opts);
+                    TrafficStats.setThreadStatsTag(42);
 
                     socket.on("NEW_LIST", new Emitter.Listener() {
                         @Override
                         public void call(Object... args) {
-                            String data = (String)args[0];
-                            sendEvent("SocketData", data);
+                            // Handle the event here
+                            sendEvent("SocketData", args.toString());
+                        }});
+
+                    socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+                        @Override
+                        public void call(Object... args) {
+                            // Handle the disconnect event here
+                            sendEvent("SocketData", "Disconnected");
                         }
                     });
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
 
+
+                } catch (URISyntaxException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
