@@ -7,22 +7,48 @@
 
 import Foundation
 import UIKit
-import Alamofire
+
+struct ChannelType {
+    var key: String
+    var cb: (Any) -> Void
+}
 
 @objc(MySwiftModule)
 class MySwiftModule: RCTEventEmitter {
-    @objc
-    func fetchData(_ url: String) -> Void {
-      AF.request(url).responseJSON { response in
-          // handle response data here
-        print(response.value);
-        
-        self.sendEvent(withName: "FetchData", body: response.value)
+  private var dataPubsub: [ChannelType] = []
+  
+  @objc
+  func publicChannel(_ key: String, cb: @escaping (Any) -> Void) -> () -> Void {
+      // Perform some operation with the key
+    // Look for existing object with matching key
+       if let existingObjectIndex = dataPubsub.firstIndex(where: { $0.key == key }) {
+           // Replace callback for existing object
+         dataPubsub[existingObjectIndex].cb = cb
+         
+         return { [weak self] in
+                     self?.dataPubsub.remove(at: existingObjectIndex)
+                 }
+       } else {
+           // Add new object to array
+         dataPubsub.append(ChannelType(key: key, cb: cb))
+         
+         return { [weak self] in
+                     if let index = self?.dataPubsub.firstIndex(where: { $0.key == key }) {
+                         self?.dataPubsub.remove(at: index)
+                     }
+                 }
+       }
+  }
+  
+  @objc
+  func subscribe(_ key: String, data: Any) {
+      if let myObject = dataPubsub.first(where: { $0.key == key }) {
+          myObject.cb(data)
       }
-    }
+  }
   
   override func supportedEvents() -> [String]! {
-    return ["FetchData"]
+    return ["subscribe", "publicChannel"]
   }
 }
 

@@ -5,11 +5,10 @@
  * @format
  */
 
-import axios from 'axios';
 import type {PropsWithChildren} from 'react';
 import React, {useEffect} from 'react';
 import {
-  NativeEventEmitter,
+  Button,
   NativeModules,
   SafeAreaView,
   ScrollView,
@@ -31,7 +30,7 @@ type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-const APIModule = NativeModules.APIModule;
+const APIModule = NativeModules.MySwiftModule;
 
 function Section({children, title}: SectionProps): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -59,7 +58,7 @@ function Section({children, title}: SectionProps): JSX.Element {
   );
 }
 
-const eventEmitter = new NativeEventEmitter(APIModule);
+// const eventEmitter = new NativeEventEmitter(APIModule);
 
 function App(): JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -68,27 +67,26 @@ function App(): JSX.Element {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
+  // useEffect(() => {
+  //   let timeout: number | null = null;
+  //   const listener = eventEmitter.addListener('SocketData', data => {
+  //     if (timeout != null) {
+  //       return;
+  //     }
+
+  //     timeout = setTimeout(() => {
+  //       console.log(data);
+  //       timeout = null;
+  //     }, 1000);
+  //   });
+
+  //   return () => {
+  //     eventEmitter.removeSubscription(listener);
+  //   };
+  // }, []);
+
   useEffect(() => {
-    let timeout: number | null = null;
-    const listener = eventEmitter.addListener('SocketData', data => {
-      if (timeout != null) {
-        return;
-      }
-
-      timeout = setTimeout(() => {
-        console.log(data);
-        timeout = null;
-      }, 1000);
-    });
-
-    return () => {
-      eventEmitter.removeSubscription(listener);
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('here1');
-    APIModule.runSocket();
+    console.log('APIModule', APIModule);
   }, []);
 
   return (
@@ -101,30 +99,37 @@ function App(): JSX.Element {
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
         <Header />
-        <Text
+        <Button
+          title="Public channel test key"
           onPress={() => {
-            setInterval(() => {
-              APIModule.getData('https://jsonplaceholder.typicode.com/todos');
-            }, 100);
-            // APIModule.getData(
-            //   'https://jsonplaceholder.typicode.com/todos',
-            //   data => {
-            //     console.log('data', data);
-            //   },
-            // );
-          }}>
-          Click me
-        </Text>
-        <Text
+            console.log('Public channel test key');
+            APIModule.publicChannel('test', (data: any) => {
+              // do something
+              console.log('====================================');
+              console.log('Test channel', data);
+              console.log('====================================');
+            });
+          }}
+        />
+        <View style={{height: 10}} />
+        <Button
+          title="Run channel test key"
           onPress={() => {
-            axios
-              .get('https://jsonplaceholder.typicode.com/todos')
-              .then(data => {
-                console.log('data', data.data, 'From press me');
-              });
-          }}>
-          Press me
-        </Text>
+            console.log('Run channel');
+            APIModule.subscribe('test', {key: 'this is data'});
+          }}
+        />
+        <View style={{height: 10}} />
+
+        <Button
+          title="  Remove test key"
+          onPress={() => {
+            console.log('Remove channel');
+            APIModule.removeCallback('test');
+          }}
+        />
+        <View style={{height: 10}} />
+
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,

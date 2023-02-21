@@ -10,5 +10,6 @@
 #import <React/RCTEventEmitter.h>
 
 @interface RCT_EXTERN_MODULE(MySwiftModule, RCTEventEmitter)
-  RCT_EXTERN_METHOD(fetchData: url (String) url)
+  RCT_EXTERN_METHOD(publicChannel:(NSString *)key cb:(RCTResponseSenderBlock)cb)
+  RCT_EXTERN_METHOD(subscribe:(NSString *)key data:(NSDictionary *)data)
 @end
